@@ -40,7 +40,6 @@ class User(db.Model):
 
     license_number = db.Column(db.String(80), unique=True, nullable=True)
     address = db.Column(db.String(255), nullable=True)
-
     gender = db.Column(db.String(20), nullable=True)
     date_of_birth = db.Column(db.Date, nullable=True)
 
@@ -54,6 +53,39 @@ class User(db.Model):
     created_at = db.Column(db.DateTime, default=datetime.utcnow, nullable=False)
     updated_at = db.Column(db.DateTime, default=datetime.utcnow, onupdate=datetime.utcnow, nullable=False)
 
+    # Password helpers
+
+    def set_password(self, password: str) -> None:
+        self.password_hash = generate_password_hash(password)
+
+    def check_password(self, password: str) -> bool:
+        return check_password_hash(self.password_hash, password)
+
+    # Role helpers
+
+    def is_admin(self) -> bool:
+        return self.role == Role.ADMIN.value
+
+    def is_patient(self) -> bool:
+        return self.role == Role.PATIENT.value
+
+    # Age calculation
+
+    @property
+    def age(self):
+        if not self.date_of_birth:
+            return None
+
+        today = date.today()
+        years = today.year - self.date_of_birth.year
+
+        if (today.month, today.day) < (self.date_of_birth.month, self.date_of_birth.day):
+            years -= 1
+
+        return years
+
+    # API response
+
     def to_dict(self):
         return {
             "id": self.id,
@@ -64,8 +96,6 @@ class User(db.Model):
             "phone": self.phone,
             "license_number": self.license_number,
             "address": self.address,
-
-            # ✅ NEW FIELDS
             "gender": self.gender,
             "date_of_birth": self.date_of_birth.isoformat() if self.date_of_birth else None,
             "age": self.age,
@@ -76,9 +106,7 @@ class User(db.Model):
         }
 
 
-# -------------------------
 # Prevent editing role/license
-# -------------------------
 
 @event.listens_for(User, "before_update")
 def prevent_role_or_license_edit(mapper, connection, target: User):
