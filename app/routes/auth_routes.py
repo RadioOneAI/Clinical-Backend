@@ -35,7 +35,6 @@ def login():
 
     claims = {"role": user.role, "status": user.status}
 
-    #IMPORTANT: identity must be a STRING (sub must be string)
     access = create_access_token(identity=str(user.id), additional_claims=claims)
     refresh = create_refresh_token(identity=str(user.id), additional_claims=claims)
 
@@ -49,7 +48,6 @@ def login():
 @auth_bp.post("/refresh")
 @jwt_required(refresh=True)
 def refresh():
-    #get_jwt_identity() returns the string we stored
     user_id_str = get_jwt_identity()
 
     try:
@@ -65,6 +63,5 @@ def refresh():
 
     claims = {"role": user.role, "status": user.status}
 
-    #keep identity as string
     access = create_access_token(identity=str(user.id), additional_claims=claims)
     return ok({"access_token": access}, "Token refreshed")
