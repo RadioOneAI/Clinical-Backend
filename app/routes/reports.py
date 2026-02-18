@@ -534,6 +534,37 @@ def create_report():
     return ok(report_response(report), "Report created", 201)
 
 
+@reports_bp.patch("/<int:report_id>")
+@radiologist_required
+def update_report(report_id: int):
+    report = Report.query.get(report_id)
+    if not report:
+        return fail("Report not found.", code=404)
+
+    if not can_manage_report(report):
+        return fail("Access denied.", code=403)
+
+    data = request.get_json(silent=True) or {}
+    if not data:
+        return fail("JSON body is required.", code=400)
+
+    allowed_fields = {
+        "scan_request_id",
+        "scan_req_id",
+        "scan_type",
+        "organ",
+        "analysis_time_ms",
+        "radiologist_text",
+        "summary",
+        "diagnoses",
+        "tumors",
+        "original_image",
+        "classification",
+        "detection",
+        "segmentation",
+        "images",
+        "status",
+    }
 
     invalid_fields = [k for k in data.keys() if k not in allowed_fields]
     if invalid_fields:
